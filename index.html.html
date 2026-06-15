@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Church of Christ International School - Computing</title>
+    <style>
+        :root { --sidebar-w: 280px; --bg: #f8fafc; --primary: #0f172a; --accent: #2563eb; --text: #000; }
+        .dark-mode { --bg: #0f172a; --primary: #020617; --text: #f8fafc; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; }
+        
+        #left-sidebar { width: var(--sidebar-w); background: var(--primary); color: white; padding: 25px; transition: 0.3s; }
+        .topic-link { padding: 15px; border-bottom: 1px solid #334155; cursor: pointer; }
+        .topic-link:hover { background: var(--accent); }
+        
+        #main-content { flex-grow: 1; padding: 40px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; position: relative; }
+        #timer-bar { width: 100%; max-width: 700px; height: 12px; background: #e2e8f0; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+        #timer-progress { width: 100%; height: 100%; background: var(--accent); transition: width 1s linear; }
+        
+        .option { display: block; width: 100%; padding: 20px; margin: 10px 0; border: 2px solid #cbd5e1; cursor: pointer; background: white; color: black; border-radius: 10px; font-size: 1.1rem; }
+        .option:hover { background: #e0f2fe; border-color: var(--accent); }
+        .option.selected { background: #1e293b; color: white; border-color: #0f172a; }
+        
+        .nav-btn { padding: 15px 30px; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; }
+        #modal, #result-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .modal-box { background: white; color: black; padding: 40px; border-radius: 20px; text-align: center; }
+        .q-node { padding: 10px; border: 1px solid #ccc; cursor: pointer; text-align: center; background: white; color: black; }
+        .q-node:hover { background: #eee; }
+        .icon-btn { cursor: pointer; font-size: 24px; background: none; border: none; padding: 10px; color: inherit; }
+        input, select { padding: 12px; width: 80%; margin: 10px 0; border: 1px solid #ccc; display: block; margin-left: auto; margin-right: auto; }
+        #topic-header { font-size: 1.5rem; font-weight: bold; color: var(--accent); margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="left-sidebar">
+    <h2>Topics</h2>
+    <div onclick="openModal('Computer Basics')" class="topic-link">Computer Basics</div>
+    <div onclick="openModal('File & Folder Management')" class="topic-link">File & Folder Mgmt</div>
+    <div onclick="openModal('Networking Basics')" class="topic-link">Networking Basics</div>
+    <div onclick="openModal('Word Processing')" class="topic-link">Word Processing</div>
+    <div onclick="openModal('Computer Browsers')" class="topic-link">Computer Browsers</div>
+    <div style="margin-top:50px; border-top: 1px solid #334155; padding-top: 20px;">
+        <button onclick="exportAllResults()" style="width:100%; padding:15px; background:orange; border:none; cursor:pointer; font-weight:bold; border-radius:5px;">EXPORT ALL RESULTS</button>
+    </div>
+</div>
+
+<div id="main-content">
+    <div style="position:absolute; top:10px; left:10px;">
+        <button class="icon-btn" onclick="document.getElementById('left-sidebar').style.display = (document.getElementById('left-sidebar').style.display === 'none' ? 'block' : 'none')">≡</button>
+        <button class="icon-btn" id="theme-toggle" onclick="toggleTheme()">🌙</button>
+    </div>
+    <div id="home-view"><h1>Church of Christ International School</h1><p>Computing Classroom</p></div>
+    
+    <div id="quiz-view" style="display:none; width:100%; max-width:700px;">
+        <div id="topic-header"></div>
+        <div id="timer-display" style="font-weight:bold; font-size:1.2rem; margin-bottom:5px;">20:00</div>
+        <div id="timer-bar"><div id="timer-progress"></div></div>
+        <h2 id="q-text"></h2>
+        <div id="options-box"></div>
+        <div style="margin-top:30px; display:flex; gap:20px; justify-content: center;">
+            <button class="nav-btn" onclick="changeQ(-1)">← BACK</button>
+            <button class="nav-btn" id="next-submit-btn" onclick="handleNext()">NEXT →</button>
+        </div>
+    </div>
+</div>
+
+<div id="right-nav" style="width:280px; background:white; color:black; padding:20px; border-left:1px solid #ddd; display:none;">
+    <h3>Questions Map</h3>
+    <div id="q-map" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;"></div>
+    <button onclick="submitQuiz()" style="width:100%; margin-top:30px; padding:20px; background:red; color:white; border:none; cursor:pointer; font-weight:bold;">DONE / SUBMIT</button>
+</div>
+
+<div id="modal">
+    <div class="modal-box">
+        <h2>Start Quiz</h2>
+        <input type="text" id="nameInput" placeholder="Enter Full Name">
+        <select id="classInput">
+            <option value="J.H.S.1">J.H.S. 1</option>
+            <option value="J.H.S.2">J.H.S. 2</option>
+            <option value="J.H.S.3">J.H.S. 3</option>
+        </select>
+        <br>
+        <button onclick="startQuiz()" style="padding:15px 30px; cursor:pointer; background:var(--accent); color:white; border:none;">START</button>
+        <button onclick="document.getElementById('modal').style.display='none'" style="padding:15px 30px; cursor:pointer; background:#64748b; color:white; border:none;">CLOSE</button>
+    </div>
+</div>
+
+<div id="result-modal">
+    <div class="modal-box">
+        <h2>Quiz Results</h2>
+        <p id="score-display" style="font-size: 24px; font-weight: bold; margin: 20px 0;"></p>
+        <button onclick="location.reload()" style="padding:15px 30px; cursor:pointer; background:var(--accent); color:white; border:none;">FINISH</button>
+    </div>
+</div>
+
+<script>
+    const library = {
+        "Computer Basics": [
+            {q: "What does CPU stand for?", a: ["Central Processing Unit", "Computer Power Unit", "Central Program Utility", "Control Processing Unit"], correct: "Central Processing Unit"},
+            {q: "Which device is used to type letters?", a: ["Monitor", "Keyboard", "Printer", "Speaker"], correct: "Keyboard"},
+            {q: "Which part is known as the brain of the computer?", a: ["Mouse", "Monitor", "CPU", "Scanner"], correct: "CPU"},
+            {q: "Which device displays information?", a: ["Monitor", "Keyboard", "Mouse", "UPS"], correct: "Monitor"},
+            {q: "Which device moves the pointer on screen?", a: ["Mouse", "Printer", "Speaker", "Scanner"], correct: "Mouse"},
+            {q: "What is software?", a: ["Physical parts", "Programs", "Wires", "Cables"], correct: "Programs"},
+            {q: "What is hardware?", a: ["Programs", "Files", "Physical parts", "Internet"], correct: "Physical parts"},
+            {q: "Which device prints documents?", a: ["Printer", "Monitor", "CPU", "Mouse"], correct: "Printer"},
+            {q: "Which storage device is portable?", a: ["Flash drive", "Monitor", "Keyboard", "Speaker"], correct: "Flash drive"},
+            {q: "What is a laptop?", a: ["Portable computer", "Printer", "Browser", "Network"], correct: "Portable computer"},
+            {q: "Which key starts a new line?", a: ["Shift", "Enter", "Ctrl", "Esc"], correct: "Enter"},
+            {q: "What is an operating system?", a: ["A game", "A browser", "System software", "A printer"], correct: "System software"},
+            {q: "Which is an example of software?", a: ["Windows", "Mouse", "Keyboard", "Monitor"], correct: "Windows"},
+            {q: "Which device scans pictures?", a: ["Scanner", "Speaker", "CPU", "UPS"], correct: "Scanner"},
+            {q: "What does UPS help with?", a: ["Internet", "Power backup", "Typing", "Printing"], correct: "Power backup"},
+            {q: "Which key deletes text to the left?", a: ["Delete", "Enter", "Backspace", "Tab"], correct: "Backspace"},
+            {q: "Which device produces sound?", a: ["Speaker", "Monitor", "Scanner", "Printer"], correct: "Speaker"},
+            {q: "What is a desktop computer?", a: ["A portable phone", "A computer used on a desk", "A printer", "A browser"], correct: "A computer used on a desk"},
+            {q: "Which is an input device?", a: ["Keyboard", "Monitor", "Speaker", "Projector"], correct: "Keyboard"},
+            {q: "What is ICT?", a: ["Information and Communication Technology", "Internet Computer Tool", "Internal Cable Technology", "Input Control Tool"], correct: "Information and Communication Technology"}
+        ],
+        "File & Folder Management": [
+            {q: "A folder is used to?", a: ["Store files", "Print pages", "Browse internet", "Play music"], correct: "Store files"},
+            {q: "Which action creates a copy?", a: ["Delete", "Copy", "Rename", "Close"], correct: "Copy"},
+            {q: "Which action changes a file name?", a: ["Rename", "Paste", "Cut", "Open"], correct: "Rename"},
+            {q: "What happens when a file is deleted?", a: ["Moved to Recycle Bin", "Printed", "Uploaded", "Scanned"], correct: "Moved to Recycle Bin"},
+            {q: "Ctrl+C means?", a: ["Copy", "Cut", "Close", "Create"], correct: "Copy"},
+            {q: "Ctrl+V means?", a: ["View", "Paste", "Verify", "Visit"], correct: "Paste"},
+            {q: "Ctrl+X means?", a: ["Exit", "Cut", "Execute", "Expand"], correct: "Cut"},
+            {q: "A file contains?", a: ["Data", "Folders", "Networks", "Browsers"], correct: "Data"},
+            {q: "Which folder stores deleted files?", a: ["Recycle Bin", "Downloads", "Desktop", "Documents"], correct: "Recycle Bin"},
+            {q: "Documents are commonly saved in?", a: ["Documents folder", "CPU", "Monitor", "Browser"], correct: "Documents folder"},
+            {q: "File extension .jpg is for?", a: ["Images", "Videos", "Audio", "Programs"], correct: "Images"},
+            {q: "File extension .mp3 is for?", a: ["Audio", "Pictures", "Documents", "Folders"], correct: "Audio"},
+            {q: "Double-clicking a file usually?", a: ["Opens it", "Deletes it", "Copies it", "Prints it"], correct: "Opens it"},
+            {q: "A folder can contain?", a: ["Files and folders", "Only files", "Only folders", "Nothing"], correct: "Files and folders"},
+            {q: "Which action moves a file?", a: ["Cut and Paste", "Print", "Scan", "Rename"], correct: "Cut and Paste"},
+            {q: "Desktop is?", a: ["Workspace area", "Printer", "Folder type", "Network"], correct: "Workspace area"},
+            {q: "Downloads folder stores?", a: ["Downloaded files", "Deleted files", "Passwords", "Networks"], correct: "Downloaded files"},
+            {q: "What is file organization?", a: ["Arranging files properly", "Deleting everything", "Printing", "Browsing"], correct: "Arranging files properly"},
+            {q: "Which icon represents a folder?", a: ["Folder icon", "Speaker icon", "Monitor icon", "Mouse icon"], correct: "Folder icon"},
+            {q: "Why create folders?", a: ["To organize files", "To damage files", "To print", "To browse"], correct: "To organize files"}
+        ],
+        "Networking Basics": [
+            {q: "A network connects?", a: ["Computers", "Printers only", "Keyboards", "Speakers"], correct: "Computers"},
+            {q: "The Internet is a?", a: ["Global network", "Printer", "Folder", "CPU"], correct: "Global network"},
+            {q: "Wi-Fi is?", a: ["Wireless connection", "Cable", "Folder", "Browser"], correct: "Wireless connection"},
+            {q: "A router is used to?", a: ["Connect networks", "Print", "Scan", "Type"], correct: "Connect networks"},
+            {q: "LAN stands for?", a: ["Local Area Network", "Large Access Node", "Local Access Network", "Long Area Network"], correct: "Local Area Network"},
+            {q: "Which is needed for internet access?", a: ["Connection", "Printer", "Scanner", "Speaker"], correct: "Connection"},
+            {q: "A modem helps?", a: ["Connect to internet", "Type documents", "Play music", "Print"], correct: "Connect to internet"},
+            {q: "Email is used for?", a: ["Sending messages", "Printing", "Scanning", "Typing"], correct: "Sending messages"},
+            {q: "Which device shares internet?", a: ["Router", "Keyboard", "Mouse", "Speaker"], correct: "Router"},
+            {q: "Website addresses begin with?", a: ["URL", "CPU", "RAM", "UPS"], correct: "URL"},
+            {q: "Bluetooth is used for?", a: ["Short-range wireless communication", "Printing", "Folders", "Typing"], correct: "Short-range wireless communication"},
+            {q: "What is online?", a: ["Connected to internet", "Turned off", "Printed", "Deleted"], correct: "Connected to internet"},
+            {q: "What is offline?", a: ["Not connected to internet", "Connected", "Printing", "Scanning"], correct: "Not connected to internet"},
+            {q: "Cyber safety means?", a: ["Using internet safely", "Typing fast", "Printing", "Deleting"], correct: "Using internet safely"},
+            {q: "A password should be?", a: ["Secret", "Shared with everyone", "Short only", "Public"], correct: "Secret"},
+            {q: "Video calls need?", a: ["Internet", "Printer", "Scanner", "Folder"], correct: "Internet"},
+            {q: "Which is a communication tool?", a: ["Email", "Mouse", "CPU", "Monitor"], correct: "Email"},
+            {q: "Downloading means?", a: ["Receiving files", "Deleting files", "Printing", "Scanning"], correct: "Receiving files"},
+            {q: "Uploading means?", a: ["Sending files", "Deleting", "Printing", "Typing"], correct: "Sending files"},
+            {q: "Network devices can?", a: ["Share resources", "Cook food", "Wash clothes", "Drive cars"], correct: "Share resources"}
+        ],
+        "Word Processing": [
+            {q: "Microsoft Word is a?", a: ["Word processor", "Browser", "Game", "Network"], correct: "Word processor"},
+            {q: "Used to create?", a: ["Documents", "Networks", "Folders only", "Printers"], correct: "Documents"},
+            {q: "Bold text makes text?", a: ["Thicker", "Smaller", "Hidden", "Blue"], correct: "Thicker"},
+            {q: "Ctrl+B applies?", a: ["Bold", "Browser", "Bookmark", "Border"], correct: "Bold"},
+            {q: "Ctrl+U applies?", a: ["Underline", "Undo", "Upload", "Update"], correct: "Underline"},
+            {q: "Ctrl+I applies?", a: ["Italic", "Insert", "Internet", "Image"], correct: "Italic"},
+            {q: "Alignment controls?", a: ["Position of text", "Internet", "Folders", "Passwords"], correct: "Position of text"},
+            {q: "Spell Check helps?", a: ["Find spelling mistakes", "Print", "Browse", "Delete"], correct: "Find spelling mistakes"},
+            {q: "Header appears?", a: ["Top of page", "Bottom", "Middle", "Nowhere"], correct: "Top of page"},
+            {q: "Footer appears?", a: ["Bottom of page", "Top", "Middle", "Side"], correct: "Bottom of page"},
+            {q: "Save command stores?", a: ["Changes", "Internet", "Printer", "Folder"], correct: "Changes"},
+            {q: "Ctrl+S means?", a: ["Save", "Search", "Start", "Send"], correct: "Save"},
+            {q: "Print Preview shows?", a: ["How document will print", "Internet", "Folders", "Passwords"], correct: "How document will print"},
+            {q: "Font size changes?", a: ["Text size", "Paper size", "Internet", "Folders"], correct: "Text size"},
+            {q: "A paragraph is?", a: ["Group of sentences", "Single letter", "Image", "Folder"], correct: "Group of sentences"},
+            {q: "Undo reverses?", a: ["Last action", "Printing", "Internet", "Saving"], correct: "Last action"},
+            {q: "Redo restores?", a: ["Undone action", "Deleted computer", "Internet", "Folder"], correct: "Undone action"},
+            {q: "Insert Picture adds?", a: ["Image", "Network", "Folder", "Password"], correct: "Image"},
+            {q: "Page number helps?", a: ["Number pages", "Delete pages", "Print pages", "Hide pages"], correct: "Number pages"},
+            {q: "Word wrap means?", a: ["Text moves to next line automatically", "Prints", "Deletes", "Uploads"], correct: "Text moves to next line automatically"}
+        ],
+        "Computer Browsers": [
+            {q: "A browser is used to?", a: ["View websites", "Print", "Scan", "Type"], correct: "View websites"},
+            {q: "Which is a browser?", a: ["Google Chrome", "Microsoft Word", "Paint", "Calculator"], correct: "Google Chrome"},
+            {q: "Which is also a browser?", a: ["Mozilla Firefox", "Printer", "Folder", "Speaker"], correct: "Mozilla Firefox"},
+            {q: "Address bar stores?", a: ["Website address", "Passwords only", "Music", "Pictures"], correct: "Website address"},
+            {q: "A website address is called?", a: ["URL", "CPU", "RAM", "USB"], correct: "URL"},
+            {q: "Refresh button does?", a: ["Reload page", "Delete page", "Print page", "Close page"], correct: "Reload page"},
+            {q: "Home button takes you?", a: ["Home page", "Printer", "Folder", "Desktop"], correct: "Home page"},
+            {q: "Bookmark helps?", a: ["Save favorite sites", "Delete sites", "Print sites", "Close sites"], correct: "Save favorite sites"},
+            {q: "Tab allows?", a: ["Multiple pages open", "Printing", "Deleting", "Typing"], correct: "Multiple pages open"},
+            {q: "Search engine example?", a: ["Google", "Keyboard", "Monitor", "Folder"], correct: "Google"},
+            {q: "Download in browser means?", a: ["Get files", "Delete files", "Print files", "Scan files"], correct: "Get files"},
+            {q: "History shows?", a: ["Visited sites", "Passwords", "Folders", "Printers"], correct: "Visited sites"},
+            {q: "Private browsing helps?", a: ["Reduce local history storage", "Print", "Delete computer", "Scan"], correct: "Reduce local history storage"},
+            {q: "Back button goes?", a: ["Previous page", "Next page", "Home", "Desktop"], correct: "Previous page"},
+            {q: "Forward button goes?", a: ["Next page", "Previous page", "Print", "Delete"], correct: "Next page"},
+            {q: "Browser zoom changes?", a: ["Page size", "Internet speed", "Folder size", "Password"], correct: "Page size"},
+            {q: "HTTPS indicates?", a: ["More secure connection", "Printer", "Folder", "Virus"], correct: "More secure connection"},
+            {q: "Closing a tab?", a: ["Removes current tab", "Deletes browser", "Formats PC", "Prints"], correct: "Removes current tab"},
+            {q: "Search box is used to?", a: ["Find information", "Print", "Scan", "Delete"], correct: "Find information"},
+            {q: "Internet browser helps users?", a: ["Access web pages", "Cook food", "Drive cars", "Repair printers"], correct: "Access web pages"}
+        ]
+    };
+
+    let selectedTopic, currentQ = 0, answers = new Array(20).fill(null), shuffledOptions = [], studentName, studentClass, timer, timeLeft;
+
+    function openModal(t) { selectedTopic = t; document.getElementById('modal').style.display = 'flex'; }
+    
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const btn = document.getElementById('theme-toggle');
+        btn.innerText = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startQuiz() {
+        studentName = document.getElementById('nameInput').value;
+        studentClass = document.getElementById('classInput').value;
+        if(!studentName) return alert("Please enter your name!");
+        
+        document.getElementById('topic-header').innerText = `Topic: ${selectedTopic}`;
+        document.getElementById('modal').style.display = 'none';
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('quiz-view').style.display = 'block';
+        document.getElementById('right-nav').style.display = 'block';
+        currentQ = 0;
+        answers = new Array(20).fill(null);
+        shuffledOptions = library[selectedTopic].map(q => shuffle([...q.a]));
+        timeLeft = 1200;
+        clearInterval(timer);
+        timer = setInterval(function() {
+            timeLeft--;
+            let mins = Math.floor(timeLeft / 60);
+            let secs = timeLeft % 60;
+            document.getElementById('timer-display').innerText = mins + ":" + (secs < 10 ? "0" + secs : secs);
+            document.getElementById('timer-progress').style.width = (timeLeft / 1200 * 100) + "%";
+            if(timeLeft <= 0) submitQuiz();
+        }, 1000);
+        renderMap(); loadQ();
+    }
+    
+    function renderMap() {
+        let html = '';
+        for(let i=0; i<20; i++) html += `<div class="q-node" onclick="jump(${i})">${i+1}</div>`;
+        document.getElementById('q-map').innerHTML = html;
+    }
+    
+    function loadQ() {
+        const qData = library[selectedTopic][currentQ];
+        const currentOptions = shuffledOptions[currentQ];
+        document.getElementById('q-text').innerText = `${currentQ+1}. ${qData.q}`;
+        document.getElementById('options-box').innerHTML = currentOptions.map((o, i) => 
+            `<button class="option ${answers[currentQ] === o ? 'selected' : ''}" onclick="select('${o.replace(/'/g, "\\'")}', this)">${o}</button>`).join('');
+        
+        document.getElementById('next-submit-btn').innerText = (currentQ === 19) ? "SUBMIT →" : "NEXT →";
+    }
+    
+    function handleNext() { (currentQ === 19) ? submitQuiz() : changeQ(1); }
+    
+    function select(option, el) {
+        answers[currentQ] = option;
+        document.querySelectorAll('.option').forEach(btn => btn.classList.remove('selected'));
+        el.classList.add('selected');
+        document.querySelectorAll('.q-node')[currentQ].style.background = '#22c55e';
+    }
+    
+    function changeQ(d) { if(currentQ + d >= 0 && currentQ + d < 20) { currentQ += d; loadQ(); } }
+    function jump(i) { currentQ = i; loadQ(); }
+    
+    function submitQuiz() {
+        clearInterval(timer);
+        if(!confirm("Are you finished?")) return;
+        
+        let score = 0;
+        library[selectedTopic].forEach((q, i) => { if(answers[i] === q.correct) score++; });
+        
+        const result = { 
+            student: studentName, 
+            class: studentClass,
+            topic: selectedTopic, 
+            score: `${score}/20`, 
+            date: new Date().toLocaleDateString(), 
+            time: new Date().toLocaleTimeString() 
+        };
+        
+        let allResults = JSON.parse(localStorage.getItem('quizData') || '[]');
+        allResults.push(result);
+        localStorage.setItem('quizData', JSON.stringify(allResults));
+        
+        // Show Results Modal
+        document.getElementById('result-modal').style.display = 'flex';
+        document.getElementById('score-display').innerText = `Your Score: ${score} / 20`;
+    }
+
+    function exportAllResults() {
+        const data = localStorage.getItem('quizData');
+        if (!data) return alert("No results found!");
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
+        a.download = `All_Student_Results.json`;
+        a.click();
+    }
+</script>
+</body>
+</html>
